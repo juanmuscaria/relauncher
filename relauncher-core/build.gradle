@@ -75,4 +75,5 @@ publishing {
 signing {
     required { findProperty('signing.gnupg.keyName') != null || findProperty('signing.keyId') != null }
     sign publishing.publications
+    useGpgCmd()
 }
