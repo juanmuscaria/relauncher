@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
 //! Simple native library to allow a "clean" relaunch of the JVM
 //! - On POSIX compatible platforms it will use exec to replace the process entirely
 //! - On Windows it will abuse `DllMain(DLL_PROCESS_DETACH)` to keep the current process alive

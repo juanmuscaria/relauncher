@@ -1,0 +1,11 @@
+version = 1
+[[annotations]]
+path = ["*"]
+SPDX-License-Identifier = "MPL-2.0"
+SPDX-FileCopyrightText =  "juanmuscaria <juan@juanmuscaria.com>"
+
+[[annotations]]
+path = ["gradlew", "gradlew.bat", "gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.properties"]
+precedence = "override"
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "the original authors"
