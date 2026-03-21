@@ -310,7 +310,8 @@ pub unsafe extern "system" fn DllMain(
         }
 
         if COMMAND_LINE.is_null() {
-            panic!("Relauncher not armed properly!")
+            // Nothing to do
+             return TRUE;
         }
 
         let mut si: STARTUPINFOW = std::mem::zeroed();
