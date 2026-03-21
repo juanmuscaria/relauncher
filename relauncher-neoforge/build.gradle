@@ -1,0 +1,23 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'Relauncher entry point for NeoForge 1.21.3+ (FancyModLoader)'
+
+configurations {
+    annotationProcessor.exclude group: 'com.github.bsideup.jabel'
+}
+
+tasks.compileJava {
+    sourceCompatibility = 21
+    options.release = 21
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    implementation project(':relauncher-core')
+    compileOnly('net.neoforged.fancymodloader:loader:10.0.36') { transitive = false }
+    compileOnly('org.apache.logging.log4j:log4j-api:2.25.0') { transitive = false }
+}

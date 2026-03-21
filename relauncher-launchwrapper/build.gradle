@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'Relauncher entry point for LaunchWrapper (Forge 1.6.4-1.12.2)'
+
+dependencies {
+    implementation project(':relauncher-core')
+    //noinspection VulnerableLibrariesLocal
+    compileOnly 'net.minecraft:launchwrapper:1.12'
+    compileOnly('org.apache.logging.log4j:log4j-api:2.25.0') { transitive = false }
+}

@@ -1,0 +1,28 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'Relauncher entry points for Hytale Server (early plugin + normal plugin)'
+
+configurations {
+    annotationProcessor.exclude group: 'com.github.bsideup.jabel'
+}
+
+tasks.compileJava {
+    sourceCompatibility = 21
+    options.release = 21
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+processResources {
+    filesMatching('manifest.json') {
+        expand version: project.version
+    }
+}
+
+dependencies {
+    implementation project(':relauncher-core')
+    compileOnly project(':relauncher-hytale-stubs')
+}

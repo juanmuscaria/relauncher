@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'Relauncher entry point for ModLauncher (Forge 1.13.2+ / NeoForge)'
+
+dependencies {
+    implementation project(':relauncher-core')
+    compileOnly 'cpw.mods:modlauncher:2.1.5'
+    compileOnly('org.apache.logging.log4j:log4j-api:2.25.0') { transitive = false }
+}

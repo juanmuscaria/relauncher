@@ -1,0 +1,54 @@
+plugins {
+    id 'base'
+}
+
+group 'com.juanmuscaria'
+version '1.0.0'
+
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+
+    pluginManager.withPlugin('java') {
+        repositories {
+            mavenCentral()
+            maven {
+                name = 'neoforged'
+                url = 'https://maven.neoforged.net/releases'
+            }
+            maven {
+                name = 'fabric'
+                url = 'https://maven.fabricmc.net/'
+            }
+            maven {
+                name = 'minecraft'
+                url = 'https://libraries.minecraft.net'
+            }
+        }
+
+        configurations {
+            compileOnly {
+                extendsFrom annotationProcessor
+            }
+        }
+
+        // Jabel: compile with Java 17 syntax, target Java 8 bytecode
+        dependencies {
+            annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.4.2'
+        }
+
+        // spotbugs-annotations 4.9+ requires Java 11, exclude globally
+        configurations.configureEach {
+            exclude group: 'com.github.spotbugs', module: 'spotbugs-annotations'
+        }
+
+        configure([tasks.compileJava]) {
+            sourceCompatibility = 17 // IDE support
+            options.release = 8
+
+            javaCompiler = javaToolchains.compilerFor {
+                languageVersion = JavaLanguageVersion.of(17)
+            }
+        }
+    }
+}

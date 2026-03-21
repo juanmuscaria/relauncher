@@ -1,0 +1,18 @@
+{
+  "Group": "com.juanmuscaria",
+  "Name": "relauncher",
+  "Version": "${version}",
+  "Website": "https://github.com/juanmuscaria/relauncher",
+  "Description": "JVM relaunch utilities for Hytale Server",
+  "Main": "com.juanmuscaria.relauncher.launch.HytaleEntrypoint",
+  "Authors": [
+    {
+      "Name": "juanmuscaria",
+      "Url": "https://juanmuscaria.com/"
+    }
+  ],
+  "DisabledByDefault": false,
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "ServerVersion": "universal"
+}

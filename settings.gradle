@@ -1,0 +1,11 @@
+rootProject.name = 'relauncher'
+
+include 'relauncher-core'
+include 'relauncher-launchwrapper'
+include 'relauncher-modlauncher'
+include 'relauncher-neoforge'
+include 'relauncher-fabric'
+include 'relauncher-universal'
+include 'relauncher-hytale-stubs'
+include 'relauncher-hytale'
+include 'relauncher-smoketest'

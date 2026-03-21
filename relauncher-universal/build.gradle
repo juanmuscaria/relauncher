@@ -1,0 +1,43 @@
+plugins {
+    id 'com.gradleup.shadow' version '9.0.0-beta12'
+    id 'java-library'
+}
+
+description = 'Universal Relauncher JAR, single drop-in for any supported loader'
+
+// No sources in this module, override release target to allow consuming
+// both Java 8 (core/launchwrapper) and Java 21 (neoforge) subprojects
+tasks.compileJava {
+    options.release = 21
+}
+
+dependencies {
+    implementation project(':relauncher-core')
+    implementation project(':relauncher-launchwrapper')
+    implementation project(':relauncher-modlauncher')
+    implementation project(':relauncher-neoforge')
+    implementation project(':relauncher-fabric')
+    implementation project(':relauncher-hytale')
+}
+
+jar {
+    manifest {
+        attributes(
+                'TweakClass': 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint',
+                'TweakOrder': Integer.MIN_VALUE.toString(),
+        )
+    }
+}
+
+shadowJar {
+    archiveClassifier = ''
+    mergeServiceFiles()
+}
+
+jar {
+    archiveClassifier = 'slim'
+}
+
+build {
+    dependsOn shadowJar
+}
