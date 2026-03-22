@@ -7,7 +7,7 @@ plugins {
     id 'java-library'
 }
 
-description = 'Universal Relauncher JAR combining Minecraft and Hytale support.'
+description = 'Minecraft Relauncher JAR, single drop-in for any supported Minecraft mod loader'
 
 // No sources in this module, override release target to allow consuming
 // both Java 8 (core/launchwrapper) and Java 21 (neoforge) subprojects
@@ -15,9 +15,17 @@ tasks.compileJava {
     options.release = 21
 }
 
+// Test classpath must also target Java 21 to resolve the neoforge dependency
+tasks.compileTestJava {
+    options.release = 21
+}
+
 dependencies {
-    implementation project(':relauncher-minecraft')
-    implementation project(':relauncher-hytale')
+    implementation project(':relauncher-core')
+    implementation project(':relauncher-launchwrapper')
+    implementation project(':relauncher-modlauncher')
+    implementation project(':relauncher-neoforge')
+    implementation project(':relauncher-fabric')
 }
 
 jar {

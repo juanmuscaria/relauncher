@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 plugins {
+    id 'com.gradleup.shadow' version '9.0.0-beta12'
     id 'java-library'
 }
 
@@ -29,4 +30,17 @@ processResources {
 dependencies {
     implementation project(':relauncher-core')
     compileOnly project(':relauncher-hytale-stubs')
+}
+
+shadowJar {
+    archiveClassifier = ''
+    mergeServiceFiles()
+}
+
+jar {
+    archiveClassifier = 'slim'
+}
+
+build {
+    dependsOn shadowJar
 }
