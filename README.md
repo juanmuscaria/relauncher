@@ -1,3 +1,5 @@
+![Maven Central Version](https://img.shields.io/maven-central/v/com.juanmuscaria/relauncher-core)
+
 # Relauncher
 
 JVM relaunch library for Java based applications. Drop a single JAR into your mods folder,
@@ -91,9 +93,14 @@ Relauncher tries three strategies to restart the JVM, in order of preference:
 
 ### API dependency
 
-Add `relauncher-core` as a compile-only dependency - the universal JAR will be present at runtime:
+`relauncher-core` is published on [Maven Central](https://central.sonatype.com/artifact/com.juanmuscaria/relauncher-core).
+Add it as a compile-only dependency - the universal JAR will be present at runtime:
 
 ```gradle
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     compileOnly 'com.juanmuscaria:relauncher-core:<version>'
 }
