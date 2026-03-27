@@ -10,6 +10,11 @@ allprojects {
     group = rootProject.group
     version = rootProject.version
 
+    tasks.withType(AbstractArchiveTask).configureEach {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+    }
+
     pluginManager.withPlugin('java') {
         repositories {
             mavenCentral()

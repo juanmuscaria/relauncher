@@ -15,6 +15,11 @@ out/
 # Rust
 native/target/
 
+# Prebuilt native binaries
+prebuild-resources/relauncher-natives/**/*.so
+prebuild-resources/relauncher-natives/**/*.dylib
+prebuild-resources/relauncher-natives/**/*.dll
+
 # OS
 .DS_Store
 Thumbs.db
