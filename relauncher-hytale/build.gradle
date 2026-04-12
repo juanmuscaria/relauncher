@@ -37,10 +37,18 @@ shadowJar {
     mergeServiceFiles()
 }
 
+tasks.register('curseforgeJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier = 'curseforge'
+    from sourceSets.main.output
+    configurations = [project.configurations.runtimeClasspath]
+    mergeServiceFiles()
+    exclude 'relauncher-natives/**'
+}
+
 jar {
     archiveClassifier = 'slim'
 }
 
 build {
-    dependsOn shadowJar
+    dependsOn shadowJar, curseforgeJar
 }

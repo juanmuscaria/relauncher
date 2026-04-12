@@ -1,4 +1,6 @@
-![Maven Central Version](https://img.shields.io/maven-central/v/com.juanmuscaria/relauncher-core)
+[![Maven Central Version](https://img.shields.io/maven-central/v/com.juanmuscaria/relauncher-core)](https://central.sonatype.com/artifact/com.juanmuscaria/relauncher-core)
+[![Modrinth Version](https://img.shields.io/modrinth/v/relauncher?logo=modrinth)](https://modrinth.com/mod/relauncher)
+[![CurseForge Version](https://img.shields.io/curseforge/v/1491728?logo=curseforge)](https://www.curseforge.com/minecraft/mc-mods/relauncher)
 
 # Relauncher
 
@@ -64,6 +66,33 @@ enabled = true
 The config `enabled` flag only controls the config file's own arguments.
 If another mod provides a `CommandLineProvider` SPI implementation, the relaunch will happen regardless of this flag.
 
+## Editions
+
+The project produces two editions of each JAR:
+
+- **Full** (default) - includes native libraries for all platforms. Supports all three relaunch strategies listed below.
+- **CurseForge** (`-curseforge` classifier) - identical to the full edition but without bundled native libraries.
+  Only the pure-Java fallback strategy is available out of the box. CurseForge does not permit bundled native
+  binaries, so this edition exists to comply with their distribution policy.
+
+Features **not available** in the CurseForge edition (without manually providing natives):
+
+| Feature                                                        | Full  | CurseForge  |
+|----------------------------------------------------------------|-------|-------------|
+| POSIX exec (in-place restart, same PID)                        | Yes   | No          |
+| Windows DLL (clean restart after JVM exit)                     | Yes   | No          |
+| Windows `GetCommandLineW()` (accurate command-line extraction) | Yes   | No          |
+| Pure Java fallback (ProcessBuilder + waitFor)                  | Yes   | Yes         |
+
+**Windows users:** Without the native library, the CurseForge edition cannot use `GetCommandLineW()` to read the
+original command line. It falls back to reconstructing it from system properties, which can be inaccurate when
+launchers or tools like ForgeWrapper mutate `java.class.path` or other JVM state. This may cause the relaunch to
+fail or produce incorrect behavior on Windows. Linux and macOS are unaffected as they can read `/proc/self/cmdline`.
+
+The CurseForge edition still contains all JNI declarations, so if you manually place the native libraries in
+the launcher's native library folder, the native strategies and accurate command-line extraction will activate
+automatically.
+
 ## How it works
 
 Relauncher tries three strategies to restart the JVM, in order of preference:
@@ -120,9 +149,9 @@ RelaunchResult result = Relauncher.relaunch(extraArgs);
 // If we get here, the relaunch didn't happen
 if (result.isFailed()) {
     logger.error("Relaunch failed: " + result.reason());
-} else if (result.isSkipped()) {
+    } else if (result.isSkipped()) {
     logger.warn("Relaunch skipped: " + result.reason());
-}
+    }
 ```
 
 ### SPI provider
