@@ -12,12 +12,14 @@ import cpw.mods.modlauncher.api.ITransformationService;
 import cpw.mods.modlauncher.api.ITransformer;
 import org.apache.logging.log4j.LogManager;
 
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Entry point for Forge 1.13.2+ and NeoForge up to 1.21.1, which use ModLauncher.
@@ -109,7 +111,7 @@ public class ModLauncherEntrypoint implements ITransformationService, Platform {
      */
     private void hideEarlyWindow() {
         // Try NeoForge first, then Forge; same field names, different package
-        String[] handlerClasses = {
+        var handlerClasses = new String[]{
             "net.neoforged.fml.loading.ImmediateWindowHandler",
             "net.minecraftforge.fml.loading.ImmediateWindowHandler",
         };
@@ -128,7 +130,7 @@ public class ModLauncherEntrypoint implements ITransformationService, Platform {
 
     private boolean tryHideWindow(Class<?> handlerClass) {
         try {
-            Field providerField = handlerClass.getDeclaredField("provider");
+            var providerField = handlerClass.getDeclaredField("provider");
             providerField.setAccessible(true);
             var provider = providerField.get(null);
 
@@ -136,16 +138,39 @@ public class ModLauncherEntrypoint implements ITransformationService, Platform {
                 return false;
             }
 
-            var windowField = provider.getClass().getDeclaredField("window");
-            windowField.setAccessible(true);
-            long windowHandle = windowField.getLong(provider);
-
+            var providerClass = provider.getClass();
+            var windowHandle = (long) readField(providerClass, "window", provider);
             if (windowHandle == 0) {
                 return false;
             }
 
+            // Destroying the window from any thread other than FML's render thread
+            // is a use-after-free: the render thread is still inside initRender(),
+            // holding the GL context in its GLFW TLS. Once we free the context,
+            // initRender's trailing glfwMakeContextCurrent(0) jumps through a NULL
+            // function pointer (SIGSEGV at PC=0). Wait for init, stop the periodic
+            // ticker, then run the destroy on the render thread itself.
+            var initFuture = (Future<?>) readField(providerClass, "initializationFuture", provider);
+            if (initFuture != null) {
+                initFuture.get(30, TimeUnit.SECONDS);
+            }
+            var windowTick = (Future<?>) readField(providerClass, "windowTick", provider);
+            if (windowTick != null) {
+                windowTick.cancel(false);
+            }
+            var renderScheduler = (ExecutorService) readField(providerClass, "renderScheduler", provider);
             var glfwClass = Class.forName("org.lwjgl.glfw.GLFW");
-            glfwClass.getMethod("glfwDestroyWindow", long.class).invoke(null, windowHandle);
+            var makeContextCurrent = glfwClass.getMethod("glfwMakeContextCurrent", long.class);
+            var destroyWindow = glfwClass.getMethod("glfwDestroyWindow", long.class);
+
+            renderScheduler.submit(() -> {
+                try {
+                    makeContextCurrent.invoke(null, 0L);
+                    destroyWindow.invoke(null, windowHandle);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+            }).get(5, TimeUnit.SECONDS);
 
             logger.info("Early display window destroyed");
             return true;
@@ -153,5 +178,11 @@ public class ModLauncherEntrypoint implements ITransformationService, Platform {
             logger.warn("Failed to hide early display window; it may remain visible until the child process exits...", e);
             return false;
         }
+    }
+
+    private static Object readField(Class<?> cls, String name, Object target) throws ReflectiveOperationException {
+        var f = cls.getDeclaredField(name);
+        f.setAccessible(true);
+        return f.get(target);
     }
 }

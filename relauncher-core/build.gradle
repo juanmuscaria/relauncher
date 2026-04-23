@@ -4,8 +4,9 @@
 
 plugins {
     id 'java-library'
-    id 'maven-publish'
-    id 'signing'
+    id 'relauncher.java-docs'
+    id 'relauncher.publishing'
+    id 'relauncher.testing-junit5'
 }
 
 description = 'Platform-agnostic JVM relaunch library'
@@ -14,18 +15,9 @@ dependencies {
     compileOnly('org.apache.logging.log4j:log4j-api:2.25.0') { transitive = false }
 }
 
-java {
-    withSourcesJar()
-    withJavadocJar()
-}
-
 jar {
     from(rootProject.file('prebuild-resources'))
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-tasks.withType(GenerateModuleMetadata).configureEach {
-    enabled = false
 }
 
 publishing {
@@ -35,45 +27,8 @@ publishing {
             artifactId = 'relauncher-core'
 
             pom {
-                name = 'Relauncher Core'
-                description = project.description
-                url = 'https://github.com/juanmuscaria/relauncher'
-                inceptionYear = '2026'
-
-                licenses {
-                    license {
-                        name = 'Mozilla Public License 2.0'
-                        url = 'https://www.mozilla.org/en-US/MPL/2.0/'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id = 'juanmuscaria'
-                        name = 'Juan'
-                        email = 'contact@juanmuscaria.com'
-                    }
-                }
-
-                scm {
-                    connection = 'scm:git:git:github.com/juanmuscaria/relauncher.git'
-                    developerConnection = 'scm:git:ssh:github.com/juanmuscaria/relauncher.git'
-                    url = 'https://github.com/juanmuscaria/relauncher'
-                }
+                relauncherPom(delegate, 'Relauncher Core')
             }
         }
     }
-
-    repositories {
-        maven {
-            name = 'localBuild'
-            url = rootProject.layout.buildDirectory.dir('repo')
-        }
-    }
-}
-
-signing {
-    required { findProperty('signing.gnupg.keyName') != null || findProperty('signing.keyId') != null }
-    sign publishing.publications
-    useGpgCmd()
 }

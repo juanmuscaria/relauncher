@@ -1,0 +1,31 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins { id 'relauncher.smoketest-entrypoint' }
+
+description = 'Entrypoint-discovery smoketest: 1.21 Fabric'
+
+relauncherSmoketest {
+    loader = 'fabric'
+    mcVersion = '1.21'
+    loaderVersion = '0.15.7'
+    entrypointModule = ':relauncher-fabric'
+}
+
+dependencies {
+    smoketestRuntimeClasspath 'net.fabricmc:fabric-loader:0.15.7'
+    // fabric-loader's built-in MinecraftGameProvider references ASM in its constructor;
+    // add it so instantiation succeeds before fabric.skipMcProvider disables it.
+    smoketestRuntimeClasspath 'org.ow2.asm:asm:9.3'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm-tree:9.3'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm-commons:9.3'
+    // Mixin is not shaded in fabric-loader; it expects the game environment to provide it.
+    smoketestRuntimeClasspath 'net.fabricmc:sponge-mixin:0.15.4+mixin.0.8.7'
+}
+
+// Tell fabric-loader to skip MinecraftGameProvider so our SmoketestGameProvider
+// (registered via ServiceLoader) is picked up instead.
+tasks.named('smoketestEntrypoint', JavaExec) {
+    jvmArgs '-Dfabric.skipMcProvider=true'
+}

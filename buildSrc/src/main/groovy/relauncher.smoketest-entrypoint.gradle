@@ -1,0 +1,99 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'relauncher.smoketest-base'
+}
+
+def smoketestExt = extensions.create('relauncherSmoketest', SmoketestEntrypointExtension)
+
+configurations {
+    smoketestRuntimeClasspath {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
+dependencies {
+    smoketestRuntimeClasspath project(':smoketest:harness')
+    smoketestRuntimeClasspath project(':smoketest:fixtures')
+    smoketestRuntimeClasspath project(':relauncher-core')
+}
+
+afterEvaluate {
+    if (smoketestExt.useRealGradlePlugin != null) {
+        logger.warn("useRealGradlePlugin='${smoketestExt.useRealGradlePlugin}' STUB")
+        return
+    }
+    if (smoketestExt.entrypointModule != null) {
+        dependencies.add('smoketestRuntimeClasspath', project(smoketestExt.entrypointModule))
+    }
+    if (smoketestExt.jvmVersion != null) {
+        tasks.named('smoketestEntrypoint', JavaExec) {
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(smoketestExt.jvmVersion)
+            }
+        }
+    }
+}
+
+tasks.register('smoketestEntrypoint', JavaExec) {
+    group = 'verification'
+    description = "Entrypoint-discovery smoketest for ${project.path}"
+    dependsOn configurations.smoketestRuntimeClasspath
+    setIgnoreExitValue(true)
+    workingDir(project.layout.buildDirectory)
+
+    doFirst {
+        if (smoketestExt.loader == null) {
+            throw new GradleException("relauncherSmoketest.loader is required")
+        }
+        def runId = System.currentTimeMillis().toString()
+        def markerBase = project.layout.buildDirectory.dir("smoketest/${runId}/entry/${project.name}").get().asFile.toPath()
+        markerBase.toFile().mkdirs()
+
+        jvmArgs '-Drelauncher.didRelaunch=true'
+        systemProperty 'relauncher.test.markerDir', markerBase.toAbsolutePath().toString()
+        systemProperty 'relauncher.test.runId', runId
+        systemProperty 'relauncher.test.combo', project.name
+
+        classpath = configurations.smoketestRuntimeClasspath
+
+        switch (smoketestExt.loader) {
+            case 'launchwrapper':
+                // real Launch casts AppClassLoader → URLClassLoader, broken on Java 9+
+                mainClass = 'com.juanmuscaria.relauncher.smoketest.harness.StubLaunchWrapperLauncher'
+                args '--tweakClass', 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint'
+                args '--version', smoketestExt.mcVersion
+                break
+            case 'modlauncher':
+                mainClass = 'cpw.mods.modlauncher.Launcher'
+                args '--launchTarget', 'smoketest'
+                break
+            case 'modlauncher-v10':
+                // BootstrapLauncher needs named modules in a layer with the union:// URL handler,
+                // way too much to set up here, the stub just runs the SPI bits we care about
+                mainClass = 'com.juanmuscaria.relauncher.smoketest.harness.StubModLauncherRunner'
+                break
+            case 'fancymodloader':
+                // FMLLoader has no main() and wants Instrumentation + module layers + a real
+                // game dir, the stub just runs the SPI bits we care about
+                mainClass = 'com.juanmuscaria.relauncher.smoketest.harness.StubFMLRunner'
+                break
+            case 'fabric':
+                mainClass = 'net.fabricmc.loader.impl.launch.knot.KnotServer'
+                break
+            default:
+                throw new GradleException("unknown loader: ${smoketestExt.loader}")
+        }
+    }
+
+    doLast {
+        def found = project.fileTree(project.layout.buildDirectory.dir("smoketest").get().asFile)
+                .matching { include "*/entry/${project.name}/bootstrap/*.txt" }
+        if (found.files.isEmpty()) {
+            throw new GradleException("No bootstrap markers written, tweaker / SPI never fired for ${project.name}")
+        }
+    }
+}

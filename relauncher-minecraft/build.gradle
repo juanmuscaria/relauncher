@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 plugins {
-    id 'com.gradleup.shadow' version '9.0.0-beta12'
     id 'java-library'
+    id 'relauncher.shadow-loader'
 }
 
 description = 'Minecraft Relauncher JAR, single drop-in for any supported Minecraft mod loader'
@@ -26,40 +26,18 @@ dependencies {
     implementation project(':relauncher-modlauncher')
     implementation project(':relauncher-neoforge')
     implementation project(':relauncher-fabric')
+    implementation project(':relauncher-foojay')
 }
+
+def launchWrapperTweakAttrs = [
+        'TweakClass': 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint',
+        'TweakOrder': Integer.MIN_VALUE.toString(),
+]
 
 jar {
-    manifest {
-        attributes(
-                'TweakClass': 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint',
-                'TweakOrder': Integer.MIN_VALUE.toString(),
-        )
-    }
+    manifest.attributes(launchWrapperTweakAttrs)
 }
 
-shadowJar {
-    archiveClassifier = ''
-    mergeServiceFiles()
-}
-
-tasks.register('curseforgeJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-    archiveClassifier = 'curseforge'
-    from sourceSets.main.output
-    configurations = [project.configurations.runtimeClasspath]
-    mergeServiceFiles()
-    exclude 'relauncher-natives/**'
-    manifest {
-        attributes(
-                'TweakClass': 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint',
-                'TweakOrder': Integer.MIN_VALUE.toString(),
-        )
-    }
-}
-
-jar {
-    archiveClassifier = 'slim'
-}
-
-build {
-    dependsOn shadowJar, curseforgeJar
+tasks.named('curseforgeJar').configure {
+    manifest.attributes(launchWrapperTweakAttrs)
 }

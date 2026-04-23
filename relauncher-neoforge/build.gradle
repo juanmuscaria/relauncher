@@ -4,21 +4,10 @@
 
 plugins {
     id 'java-library'
+    id 'relauncher.java21-natives'
 }
 
 description = 'Relauncher entry point for NeoForge 1.21.3+ (FancyModLoader)'
-
-configurations {
-    annotationProcessor.exclude group: 'com.github.bsideup.jabel'
-}
-
-tasks.compileJava {
-    sourceCompatibility = 21
-    options.release = 21
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     implementation project(':relauncher-core')

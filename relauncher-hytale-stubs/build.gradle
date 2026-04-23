@@ -4,18 +4,7 @@
 
 plugins {
     id 'java-library'
+    id 'relauncher.java21-natives'
 }
 
 description = 'Compile-only stubs for Hytale Server API types'
-
-configurations {
-    annotationProcessor.exclude group: 'com.github.bsideup.jabel'
-}
-
-tasks.compileJava {
-    sourceCompatibility = 21
-    options.release = 21
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}

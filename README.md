@@ -9,16 +9,12 @@ and it should work from Minecraft 1.6.4 to the latest version, or on Hytale Serv
 
 ## What it does
 
-Relauncher restarts the JVM process with additional arguments transparently and before the game loads.
-This is useful for:
+Relauncher restarts the JVM with extra arguments before the game loads. Useful for adding GC flags,
+system properties, or anything else you'd normally have to set in the launcher. Other mods can also
+trigger a relaunch programmatically after installing javaagents, module layers, you name it.
 
-- **Adding JVM flags** - GC tuning, `-XX:+AlwaysPreTouch`, system properties, etc., without needing to touch launcher
-  settings
-- **Modpack tooling** - other mods can trigger a relaunch programmatically after installing dependencies or configuring
-  the environment (javaagents, module layers, you name it)
-
-The relaunch happens very early during startup, before any significant game state is initialized.
-External launchers see a single continuous process with no extra windows, no orphaned processes.
+It runs early, before any real game state is set up. From the launcher's side it still looks like one
+continuous process, no extra windows or orphans.
 
 ## Supported Versions
 
@@ -66,6 +62,47 @@ enabled = true
 The config `enabled` flag only controls the config file's own arguments.
 If another mod provides a `CommandLineProvider` SPI implementation, the relaunch will happen regardless of this flag.
 
+### Java runtime selection (experimental)
+
+Relauncher can switch the JVM to a different installation if the current one doesn't match the modpack's requirements.
+Detection only, no explicit paths and no downloads.
+
+Add any or all of the following to `config.cfg`:
+
+```cfg
+# Comma-separated list of acceptable Java major versions.
+java.versions = 17, 21
+
+# Comma-separated list of acceptable vendors. Aliases like "adoptium" resolve
+# to temurin, "bellsoft" to liberica, etc. Unset = any vendor.
+java.vendors = temurin, graalvm
+
+# Minimum image type: "jre" (default) or "jdk".
+java.imageType = jre
+```
+
+When any of these keys is set, Relauncher probes the current JVM and all detected system installations
+(`/usr/lib/jvm`, `~/.sdkman/candidates/java`, `Program Files\Java`, etc.). If the current JVM satisfies the
+requirement, nothing changes. Otherwise, the newest matching installation is used for the relaunch.
+
+If nothing matches, Relauncher can fall back to downloading a JDK via
+the [Foojay Disco API](https://api.foojay.io/disco/v3.0/). A few things to know:
+
+- Only in the **Full** editions, the **CurseForge** editions drop the downloader entirely to comply with their
+  moderation policy.
+- Off by default. On a client with LWJGL3 you get a TinyFD confirmation dialog before anything downloads. Headless?
+  Set `java.autoDownload = true` in `config.cfg` or pass `-Drelauncher.java.autoDownload=true`.
+- Cached under a platform-appropriate directory (e.g. `~/.local/share/relauncher/jdks`). Override with
+  `-Drelauncher.java.downloadDir=/path/` or `java.downloadDir = /path/` in config.
+- Next launches pick up the cached JDK through normal detection, no re-download.
+
+If nothing satisfies the requirement **and** downloads are unavailable (CurseForge edition) or declined, launching is
+aborted.
+
+Mods can contribute requirements programmatically by implementing
+`com.juanmuscaria.relauncher.jvm.JavaRuntimeProvider` and registering it via `ServiceLoader` (just like
+`CommandLineProvider`).
+
 ## Editions
 
 The project produces two editions of each JAR:
@@ -84,10 +121,10 @@ Features **not available** in the CurseForge edition (without manually providing
 | Windows `GetCommandLineW()` (accurate command-line extraction) | Yes   | No          |
 | Pure Java fallback (ProcessBuilder + waitFor)                  | Yes   | Yes         |
 
-**Windows users:** Without the native library, the CurseForge edition cannot use `GetCommandLineW()` to read the
-original command line. It falls back to reconstructing it from system properties, which can be inaccurate when
-launchers or tools like ForgeWrapper mutate `java.class.path` or other JVM state. This may cause the relaunch to
-fail or produce incorrect behavior on Windows. Linux and macOS are unaffected as they can read `/proc/self/cmdline`.
+**Windows users:** without the native library the CurseForge edition can't use `GetCommandLineW()`, so it falls back
+to reconstructing the command line from system properties. That's fine until something like ForgeWrapper mutates
+`java.class.path`, then the relaunch may pick up the wrong thing or just fail. Linux and macOS are unaffected, they
+read `/proc/self/cmdline` directly.
 
 The CurseForge edition still contains all JNI declarations, so if you manually place the native libraries in
 the launcher's native library folder, the native strategies and accurate command-line extraction will activate
@@ -98,7 +135,7 @@ automatically.
 Relauncher tries three strategies to restart the JVM, in order of preference:
 
 1. **POSIX exec** (Linux / macOS) - calls `execvp()` through a native Rust library to replace the current process
-   in-place. Same PID, zero overhead, cleanest possible restart.
+   in-place. Same PID, no extra process, cleanest option.
 
 2. **Windows DLL** - hooks `DllMain(DLL_PROCESS_DETACH)` to spawn a child process *after* the JVM has fully shut down.
    stdin/stdout/stderr are duplicated beforehand so they survive the teardown. The parent waits for the child and
@@ -181,6 +218,76 @@ Register it in `META-INF/services/com.juanmuscaria.relauncher.CommandLineProvide
 ```
 com.example.mymod.MyProvider
 ```
+
+### Java runtime requirements
+
+Mods can request a specific Java major and/or vendor via `JavaRuntimeProvider`:
+
+```java
+import com.juanmuscaria.relauncher.jvm.JavaRequirement;
+import com.juanmuscaria.relauncher.jvm.JavaRuntimeProvider;
+import com.juanmuscaria.relauncher.jvm.JvmVendor;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class MyJavaRequirements implements JavaRuntimeProvider {
+    @Override
+    public List<JavaRequirement> javaRequirements() {
+        return Collections.singletonList(
+            JavaRequirement.of(Arrays.asList(17, 21), Arrays.asList(JvmVendor.GRAALVM)));
+    }
+}
+```
+
+Register it in `META-INF/services/com.juanmuscaria.relauncher.jvm.JavaRuntimeProvider`:
+
+```
+com.example.mymod.MyJavaRequirements
+```
+
+All requirements from config + all providers are intersected. Conflicting requirements (no overlap) abort
+the launch with an error dialog listing the offending sources.
+
+### Custom Java runtime downloaders
+
+The built-in Foojay downloader is just an implementation of the `JavaRuntimeDownloader` SPI.
+If you need your own (e.g. a corporate mirror), implement the interface and register it
+via `ServiceLoader`. Lower `priority()` values are tried first:
+
+```java
+import com.juanmuscaria.relauncher.jvm.JavaRuntimeDownloader;
+import com.juanmuscaria.relauncher.jvm.JavaRequirement;
+import com.juanmuscaria.relauncher.jvm.ProgressListener;
+import com.juanmuscaria.relauncher.jvm.RemotePackage;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+
+public class MyCorporateDownloader implements JavaRuntimeDownloader {
+    @Override
+    public List<RemotePackage> search(JavaRequirement req, String arch) throws IOException { /* ... */ }
+
+    @Override
+    public void download(RemotePackage pkg, Path target, ProgressListener progress) throws IOException { /* ... */ }
+
+    @Override
+    public int priority() {
+        return -100;
+    } // beat Foojay
+}
+```
+
+Register it in `META-INF/services/com.juanmuscaria.relauncher.jvm.JavaRuntimeDownloader`:
+
+```
+com.example.MyCorporateDownloader
+```
+
+Relauncher takes care of the rest - consent, file locking, checksums, extraction, probing. The SPI
+only needs to answer "what packages satisfy this requirement" and "stream bytes to this path".
 
 ### Checking relaunch state
 

@@ -42,7 +42,7 @@ public final class CommandLineExtractor {
 
     /**
      * Recovers the full argument list (JVM flags + application args) in their
-     * original order, with correct argument boundaries.
+     * original order.
      */
     public static List<String> extractArguments() {
         // Round 1, try ProcessHandle.arguments()
@@ -99,14 +99,14 @@ public final class CommandLineExtractor {
     static List<String> parseWindowsCommandLine(String cmdLine) {
         var args = new ArrayList<String>();
         var current = new StringBuilder();
-        boolean inQuotes = false;
-        int i = 0;
+        var inQuotes = false;
+        var i = 0;
 
         while (i < cmdLine.length()) {
-            char c = cmdLine.charAt(i);
+            var c = cmdLine.charAt(i);
 
             if (c == '\\') {
-                int numBackslashes = 0;
+                var numBackslashes = 0;
                 while (i < cmdLine.length() && cmdLine.charAt(i) == '\\') {
                     numBackslashes++;
                     i++;
@@ -192,7 +192,7 @@ public final class CommandLineExtractor {
     }
 
     static void appendBackslashes(StringBuilder sb, int count) {
-        for (int i = 0; i < count; i++) {
+        for (var i = 0; i < count; i++) {
             sb.append('\\');
         }
     }

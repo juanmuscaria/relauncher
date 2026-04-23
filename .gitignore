@@ -23,3 +23,7 @@ prebuild-resources/relauncher-natives/**/*.dll
 # OS
 .DS_Store
 Thumbs.db
+
+**/logs/*
+**/.fabric/*
+**.log

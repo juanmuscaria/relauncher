@@ -1,0 +1,13 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'relauncher.smoketest-base'
+}
+
+description = 'Shared SPI fixtures used by the smoketest suite'
+
+dependencies {
+    compileOnly project(':relauncher-core')
+}

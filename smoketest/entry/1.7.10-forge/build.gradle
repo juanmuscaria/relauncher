@@ -1,0 +1,25 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'relauncher.smoketest-entrypoint'
+}
+
+description = 'Entrypoint-discovery smoketest: 1.7.10 Forge (LaunchWrapper)'
+
+relauncherSmoketest {
+    loader = 'launchwrapper'
+    mcVersion = '1.7.10'
+    loaderVersion = '1.12'
+    entrypointModule = ':relauncher-launchwrapper'
+}
+
+dependencies {
+    //noinspection VulnerableLibrariesLocal
+    smoketestRuntimeClasspath 'net.minecraft:launchwrapper:1.12'
+    smoketestRuntimeClasspath 'org.apache.logging.log4j:log4j-api:2.25.0'
+    //noinspection VulnerableLibrariesLocal
+    smoketestRuntimeClasspath 'org.apache.logging.log4j:log4j-core:2.25.0'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm-debug-all:5.2'
+}

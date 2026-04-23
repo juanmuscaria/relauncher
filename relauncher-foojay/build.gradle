@@ -1,0 +1,62 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'java-library'
+    id 'com.gradleup.shadow'
+    id 'relauncher.java-docs'
+    id 'relauncher.publishing'
+    id 'relauncher.testing-junit5'
+}
+
+description = 'Foojay Disco API downloader for Relauncher. Discovers and fetches JDKs when local detection finds no match.'
+
+dependencies {
+    compileOnly project(':relauncher-core')
+    implementation 'com.google.code.gson:gson:2.11.0'
+
+    testImplementation project(':relauncher-core')
+}
+
+shadowJar {
+    archiveClassifier = ''
+    configurations = [project.configurations.runtimeClasspath]
+    relocate 'com.google.gson', 'com.juanmuscaria.relauncher.foojay.shaded.gson'
+    minimize()
+    mergeServiceFiles()
+}
+
+jar {
+    archiveClassifier = 'thin'
+}
+
+build {
+    dependsOn shadowJar
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifact shadowJar
+            artifact sourcesJar
+            artifact javadocJar
+            artifactId = 'relauncher-foojay'
+
+            pom {
+                relauncherPom(delegate, 'Relauncher Foojay Downloader')
+
+                def relauncherCoreVersion = project.version.toString()
+                withXml {
+                    def deps = asNode().appendNode('dependencies')
+                    deps.appendNode('dependency').with {
+                        appendNode('groupId', 'com.juanmuscaria')
+                        appendNode('artifactId', 'relauncher-core')
+                        appendNode('version', relauncherCoreVersion)
+                        appendNode('scope', 'provided')
+                    }
+                }
+            }
+        }
+    }
+}

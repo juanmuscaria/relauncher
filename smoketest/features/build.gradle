@@ -1,0 +1,25 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'relauncher.smoketest-base'
+    id 'relauncher.testing-junit5'
+}
+
+description = 'Version-independent relauncher feature harness'
+
+dependencies {
+    implementation project(':relauncher-core')
+    implementation project(':smoketest:harness')
+    implementation project(':smoketest:fixtures')
+
+    runtimeOnly project(':relauncher-foojay')
+}
+
+test {
+    // Propagate the network gate from -P flags into the JVM running the tests.
+    if (providers.gradleProperty('relauncher.test.allowNetwork').getOrElse('false') == 'true') {
+        systemProperty 'relauncher.test.allowNetwork', true
+    }
+}

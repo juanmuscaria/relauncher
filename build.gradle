@@ -1,10 +1,10 @@
 plugins {
     id 'base'
-    id('io.github.gradle-nexus.publish-plugin') version('2.0.0')
+    alias(libs.plugins.nexus.publish)
 }
 
 group 'com.juanmuscaria'
-version '1.0.0'
+version '1.1.0'
 
 allprojects {
     group = rootProject.group
@@ -13,6 +13,15 @@ allprojects {
     tasks.withType(AbstractArchiveTask).configureEach {
         preserveFileTimestamps = false
         reproducibleFileOrder = true
+    }
+
+    // Exclude REUSE/SPDX .license sidecar files from every JAR.
+    // SecureJarHandler (used by ModLauncher 10.x / BootstrapLauncher) reads ALL
+    // entries under META-INF/services/ as service-provider class names; the SPDX
+    // copyright headers inside .license files are not valid Java identifiers and
+    // cause BootstrapLauncher to crash with IllegalArgumentException.
+    tasks.withType(Jar).configureEach {
+        exclude 'META-INF/services/*.license'
     }
 
     pluginManager.withPlugin('java') {
@@ -64,6 +73,31 @@ nexusPublishing {
         sonatype {
             nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
             snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+        }
+    }
+}
+
+tasks.register('smoketest') {
+    group = 'verification'
+    description = 'Runs entrypoint-discovery and feature smoketests (CI-safe)'
+    dependsOn ':smoketest:features:test'
+    dependsOn subprojects
+            .findAll { it.path.startsWith(':smoketest:entry:') }
+            .collect { "${it.path}:smoketestEntrypoint" }
+}
+
+tasks.register('smoketestLocal') {
+    group = 'verification'
+    description = 'Runs smoketest including network-dependent scenarios (Foojay etc.)'
+    dependsOn 'smoketest'
+}
+
+// Wire the network gate into features:test *before* the test runs.
+// smoketestLocal is run too late after dependsOn tasks finish.
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.path == ':smoketestLocal' }) {
+        project(':smoketest:features').tasks.named('test').configure {
+            systemProperty 'relauncher.test.allowNetwork', 'true'
         }
     }
 }

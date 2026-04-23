@@ -1,0 +1,53 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'maven-publish'
+    id 'signing'
+}
+
+// Shared POM metadata, modules call relauncherPom(pom, '<display name>') from
+// their own publication block
+ext.relauncherPom = { pom, String pomName ->
+    pom.name = pomName
+    pom.description = project.description
+    pom.url = 'https://github.com/juanmuscaria/relauncher'
+    pom.inceptionYear = '2026'
+
+    pom.licenses {
+        license {
+            name = 'Mozilla Public License 2.0'
+            url = 'https://www.mozilla.org/en-US/MPL/2.0/'
+        }
+    }
+
+    pom.developers {
+        developer {
+            id = 'juanmuscaria'
+            name = 'Juan'
+            email = 'contact@juanmuscaria.com'
+        }
+    }
+
+    pom.scm {
+        connection = 'scm:git:git:github.com/juanmuscaria/relauncher.git'
+        developerConnection = 'scm:git:ssh:github.com/juanmuscaria/relauncher.git'
+        url = 'https://github.com/juanmuscaria/relauncher'
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = 'localBuild'
+            url = rootProject.layout.buildDirectory.dir('repo')
+        }
+    }
+}
+
+signing {
+    required { findProperty('signing.gnupg.keyName') != null || findProperty('signing.keyId') != null }
+    sign publishing.publications
+    useGpgCmd()
+}

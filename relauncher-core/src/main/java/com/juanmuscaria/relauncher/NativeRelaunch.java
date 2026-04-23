@@ -128,12 +128,12 @@ public final class NativeRelaunch {
             var path = Paths.get("/proc/self/cmdline");
             if (!Files.exists(path)) return null;
 
-            byte[] bytes = Files.readAllBytes(path);
+            var bytes = Files.readAllBytes(path);
             if (bytes.length == 0) return null;
 
             // /proc/self/cmdline is null-byte separated, UTF-8 encoded.
             // Strip trailing null byte, preserve internal nulls as argument separators.
-            int len = bytes.length;
+            var len = bytes.length;
             if (bytes[len - 1] == 0) {
                 len--;
             }
@@ -166,7 +166,7 @@ public final class NativeRelaunch {
     // https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments
     static String buildWindowsCommandLine(List<String> args) {
         var sb = new StringBuilder();
-        for (int i = 0; i < args.size(); i++) {
+        for (var i = 0; i < args.size(); i++) {
             if (i > 0) sb.append(' ');
             appendQuotedArg(sb, args.get(i));
         }
@@ -179,9 +179,9 @@ public final class NativeRelaunch {
             return;
         }
 
-        boolean needsQuoting = false;
-        for (int i = 0; i < arg.length(); i++) {
-            char c = arg.charAt(i);
+        var needsQuoting = false;
+        for (var i = 0; i < arg.length(); i++) {
+            var c = arg.charAt(i);
             if (c == ' ' || c == '\t' || c == '"') {
                 needsQuoting = true;
                 break;
@@ -194,9 +194,9 @@ public final class NativeRelaunch {
         }
 
         sb.append('"');
-        int backslashes = 0;
-        for (int i = 0; i < arg.length(); i++) {
-            char c = arg.charAt(i);
+        var backslashes = 0;
+        for (var i = 0; i < arg.length(); i++) {
+            var c = arg.charAt(i);
             if (c == '\\') {
                 backslashes++;
             } else if (c == '"') {

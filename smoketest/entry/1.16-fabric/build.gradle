@@ -1,0 +1,28 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins { id 'relauncher.smoketest-entrypoint' }
+
+description = 'Entrypoint-discovery smoketest: 1.16 Fabric'
+
+// TODO: Fabric Loader 0.11.3 uses an entirely different internal package for
+//  GameProvider (net.fabricmc.loader.game.GameProvider rather than
+//  net.fabricmc.loader.impl.game.GameProvider) with a different method set
+//  (locateGame takes EnvType+ClassLoader, not FabricLauncher; no initialize();
+//  no unlockClassPath(); getEntrypointTransformer returns EntrypointTransformer
+//  not GameTransformer). The SmoketestGameProvider compiled against 0.15.7
+//  is incompatible, enabling this combo would throw AbstractMethodError at
+//  runtime. Skipping until a compat shim is written.
+tasks.named('smoketestEntrypoint') { enabled = false }
+
+relauncherSmoketest {
+    loader = 'fabric'
+    mcVersion = '1.16'
+    loaderVersion = '0.11.3'
+    entrypointModule = ':relauncher-fabric'
+}
+
+dependencies {
+    smoketestRuntimeClasspath 'net.fabricmc:fabric-loader:0.11.3'
+}

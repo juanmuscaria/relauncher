@@ -12,8 +12,10 @@ import net.neoforged.neoforgespi.locating.IDiscoveryPipeline;
 import net.neoforged.neoforgespi.locating.IModFileCandidateLocator;
 import org.apache.logging.log4j.LogManager;
 
-import java.lang.reflect.Field;
 import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Entry point for NeoForge 1.21.3+, which dropped ModLauncher in favor of
@@ -49,11 +51,11 @@ public class NeoForgeEntrypoint implements IModFileCandidateLocator, Platform {
 
     @Override
     public void findCandidates(ILaunchContext context, IDiscoveryPipeline pipeline) {
-        this.configDirectory = context.gameDirectory().resolve("config/relauncher");
-        this.modsDirectory = context.gameDirectory().resolve("mods");
-        this.side = detectSide(context);
         if (register()) {
             logger.info("Relauncher loaded via NeoForge (FML 10+)");
+            this.configDirectory = context.gameDirectory().resolve("config/relauncher");
+            this.modsDirectory = context.gameDirectory().resolve("mods");
+            this.side = detectSide(context);
             RelauncherConfig.standaloneRelaunch(this, this::hideEarlyWindow);
         }
         // We don't locate any mods, we are just using the hook for early initialization
@@ -90,7 +92,7 @@ public class NeoForgeEntrypoint implements IModFileCandidateLocator, Platform {
     private void hideEarlyWindow() {
         try {
             var handlerClass = Class.forName("net.neoforged.fml.loading.ImmediateWindowHandler");
-            Field providerField = handlerClass.getDeclaredField("provider");
+            var providerField = handlerClass.getDeclaredField("provider");
             providerField.setAccessible(true);
             var provider = providerField.get(null);
 
@@ -98,20 +100,49 @@ public class NeoForgeEntrypoint implements IModFileCandidateLocator, Platform {
                 return;
             }
 
-            var windowField = provider.getClass().getDeclaredField("window");
-            windowField.setAccessible(true);
-            long windowHandle = windowField.getLong(provider);
-
+            var providerClass = provider.getClass();
+            var windowHandle = (long) readField(providerClass, "window", provider);
             if (windowHandle == 0) {
                 return;
             }
 
+            // Destroying the window from any thread other than FML's render thread
+            // is a use-after-free: the render thread is still inside initRender(),
+            // holding the GL context in its GLFW TLS. Once we free the context,
+            // initRender's trailing glfwMakeContextCurrent(0) jumps through a NULL
+            // function pointer (SIGSEGV at PC=0). Wait for init, stop the periodic
+            // ticker, then run the destroy on the render thread itself.
+            var initFuture = (Future<?>) readField(providerClass, "initializationFuture", provider);
+            if (initFuture != null) {
+                initFuture.get(30, TimeUnit.SECONDS);
+            }
+            var windowTick = (Future<?>) readField(providerClass, "windowTick", provider);
+            if (windowTick != null) {
+                windowTick.cancel(false);
+            }
+            var renderScheduler = (ExecutorService) readField(providerClass, "renderScheduler", provider);
             var glfwClass = Class.forName("org.lwjgl.glfw.GLFW");
-            glfwClass.getMethod("glfwDestroyWindow", long.class).invoke(null, windowHandle);
+            var makeContextCurrent = glfwClass.getMethod("glfwMakeContextCurrent", long.class);
+            var destroyWindow = glfwClass.getMethod("glfwDestroyWindow", long.class);
+
+            renderScheduler.submit(() -> {
+                try {
+                    makeContextCurrent.invoke(null, 0L);
+                    destroyWindow.invoke(null, windowHandle);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+            }).get(5, TimeUnit.SECONDS);
 
             logger.info("Early display window destroyed");
         } catch (Exception e) {
-            logger.warn("Failed to hide early display window; it will likely remain visible until the child process exits", e);
+            logger.warn("Failed to hide early display window; it may remain visible until the child process exits....", e);
         }
+    }
+
+    private static Object readField(Class<?> cls, String name, Object target) throws ReflectiveOperationException {
+        var f = cls.getDeclaredField(name);
+        f.setAccessible(true);
+        return f.get(target);
     }
 }

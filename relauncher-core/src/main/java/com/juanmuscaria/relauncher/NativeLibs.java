@@ -8,11 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
 /**
- * Extracts and loads the {@code relauncher_native} shared library.
- * <p>
- * Prebuilt binaries for each platform live under
- * {@code relauncher-natives/<os>-<arch>/} on the classpath. The library is
- * extracted to a temp file and loaded at most once.
+ * Extracts and loads {@code relauncher_native} from {@code relauncher-natives/<os>-<arch>/}
+ * on the classpath, into a temp file. Loaded at most once.
  */
 public final class NativeLibs {
     private static final String OS_NAME;
@@ -23,7 +20,7 @@ public final class NativeLibs {
     private static volatile boolean attemptedLoad;
 
     static {
-        String os = System.getProperty("os.name", "").toLowerCase();
+        var os = System.getProperty("os.name", "").toLowerCase();
         if (os.contains("win")) {
             OS_NAME = "windows";
         } else if (os.contains("mac") || os.contains("darwin")) {
@@ -48,26 +45,17 @@ public final class NativeLibs {
     private NativeLibs() {
     }
 
-    /**
-     * Normalized OS name: {@code linux}, {@code macos}, or {@code windows}.
-     */
+    /** {@code linux}, {@code macos} or {@code windows} */
     public static String osName() {
         return OS_NAME;
     }
 
-    /**
-     * Normalized architecture: {@code x86_64} or {@code aarch64}.
-     */
+    /** {@code x86_64} or {@code aarch64} */
     public static String arch() {
         return ARCH;
     }
 
-    /**
-     * Makes sure the native library is loaded. Safe to call from anywhere,
-     * any number of times, the actual load only happens once.
-     *
-     * @return true if the library is (now) available
-     */
+    /** Idempotent, the actual load only happens once. Returns true if the lib is available. */
     public static boolean ensureLoaded() {
         if (!attemptedLoad) {
             synchronized (NativeLibs.class) {

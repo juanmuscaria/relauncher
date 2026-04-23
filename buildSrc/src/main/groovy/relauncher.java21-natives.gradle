@@ -1,0 +1,18 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+// Java 21 bytecode for loaders that require it.
+// Undo the Jabel annotation processor inherited from the root build, Jabel only
+// down-levels to Java 8 and would mangle Java 21 sources
+configurations {
+    annotationProcessor.exclude group: 'com.github.bsideup.jabel'
+}
+
+tasks.named('compileJava').configure {
+    sourceCompatibility = 21
+    options.release = 21
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}

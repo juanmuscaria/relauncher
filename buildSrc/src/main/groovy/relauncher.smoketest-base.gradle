@@ -1,0 +1,27 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'java-library'
+    id 'relauncher.repositories'
+}
+
+// Smoketests never ship, no Jabel, and FML 10.x needs Java 21 anyway
+configurations.configureEach {
+    exclude group: 'com.github.bsideup.jabel', module: 'jabel-javac-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    sourceCompatibility = 21
+    options.release = 21
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}

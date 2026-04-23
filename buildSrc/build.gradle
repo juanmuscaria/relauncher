@@ -1,0 +1,18 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+}
+
+dependencies {
+    // Make the Shadow plugin's classes visible to convention plugins so they
+    // can reference ShadowJar directly. Keep in sync with libs.versions.toml.
+    implementation 'com.gradleup.shadow:shadow-gradle-plugin:9.4.1'
+}

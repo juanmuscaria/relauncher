@@ -1,0 +1,42 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+// Shadow jar config shared between relauncher-minecraft, relauncher-universal
+// and relauncher-hytale. Produces a slim jar, a fat -all jar, and a -curseforge
+// variant with native libs and Foojay stripped (CurseForge policy)
+plugins {
+    id 'com.gradleup.shadow'
+}
+
+def gsonShadedPackage = 'com.juanmuscaria.relauncher.foojay.shaded.gson'
+
+tasks.named('jar').configure {
+    archiveClassifier = 'slim'
+}
+
+tasks.named('shadowJar').configure {
+    archiveClassifier = ''
+    mergeServiceFiles()
+    relocate 'com.google.gson', gsonShadedPackage
+    exclude 'com/google/errorprone/**'
+    exclude 'META-INF/maven/com.google.errorprone/**'
+}
+
+tasks.register('curseforgeJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier = 'curseforge'
+    from sourceSets.main.output
+    configurations = [project.configurations.runtimeClasspath]
+    mergeServiceFiles()
+    exclude 'relauncher-natives/**'
+    exclude 'com/juanmuscaria/relauncher/foojay/**'
+    exclude 'META-INF/services/com.juanmuscaria.relauncher.jvm.JavaRuntimeDownloader'
+    exclude 'com/google/gson/**'
+    exclude 'META-INF/maven/com.google.code.gson/**'
+    exclude 'com/google/errorprone/**'
+    exclude 'META-INF/maven/com.google.errorprone/**'
+}
+
+tasks.named('build').configure {
+    dependsOn tasks.named('shadowJar'), tasks.named('curseforgeJar')
+}

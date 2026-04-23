@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 plugins {
-    id 'com.gradleup.shadow' version '9.0.0-beta12'
     id 'java-library'
+    id 'relauncher.shadow-loader'
 }
 
 description = 'Universal Relauncher JAR combining Minecraft and Hytale support.'
@@ -20,38 +20,15 @@ dependencies {
     implementation project(':relauncher-hytale')
 }
 
-jar {
-    manifest {
-        attributes(
-                'TweakClass': 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint',
-                'TweakOrder': Integer.MIN_VALUE.toString(),
-        )
-    }
-}
-
-shadowJar {
-    archiveClassifier = ''
-    mergeServiceFiles()
-}
-
-tasks.register('curseforgeJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-    archiveClassifier = 'curseforge'
-    from sourceSets.main.output
-    configurations = [project.configurations.runtimeClasspath]
-    mergeServiceFiles()
-    exclude 'relauncher-natives/**'
-    manifest {
-        attributes(
-                'TweakClass': 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint',
-                'TweakOrder': Integer.MIN_VALUE.toString(),
-        )
-    }
-}
+def launchWrapperTweakAttrs = [
+        'TweakClass': 'com.juanmuscaria.relauncher.launch.LaunchWrapperEntrypoint',
+        'TweakOrder': Integer.MIN_VALUE.toString(),
+]
 
 jar {
-    archiveClassifier = 'slim'
+    manifest.attributes(launchWrapperTweakAttrs)
 }
 
-build {
-    dependsOn shadowJar, curseforgeJar
+tasks.named('curseforgeJar').configure {
+    manifest.attributes(launchWrapperTweakAttrs)
 }

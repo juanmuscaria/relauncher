@@ -1,0 +1,27 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins { id 'relauncher.smoketest-entrypoint' }
+
+description = 'Entrypoint-discovery smoketest: 1.21 NeoForge (ModLauncher 10.1.x)'
+
+relauncherSmoketest {
+    loader = 'modlauncher-v10'
+    mcVersion = '1.21'
+    loaderVersion = '10.1.9'
+    entrypointModule = ':relauncher-modlauncher'
+}
+
+dependencies {
+    // ModLauncher 10.1.x API jars on the classpath so StubModLauncherRunner can
+    // discover and initialize ITransformationService via plain ServiceLoader.
+    smoketestRuntimeClasspath 'cpw.mods:modlauncher:10.1.9'
+    smoketestRuntimeClasspath 'cpw.mods:securejarhandler:2.1.11'
+    smoketestRuntimeClasspath 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm:9.5'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm-tree:9.5'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm-commons:9.5'
+    smoketestRuntimeClasspath 'org.apache.logging.log4j:log4j-api:2.25.0'
+    smoketestRuntimeClasspath 'org.apache.logging.log4j:log4j-core:2.25.0'
+}

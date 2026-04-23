@@ -10,6 +10,7 @@ import com.juanmuscaria.relauncher.logger.LoggerAdapter;
 import com.juanmuscaria.relauncher.logger.StdoutLoggerAdapter;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.LaunchClassLoader;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -37,7 +38,7 @@ public class LaunchWrapperEntrypoint implements ITweaker, Platform {
 
     private static LoggerAdapter makeLogger() {
         try {
-            return new Log4jLoggerAdapter(org.apache.logging.log4j.LogManager.getLogger(LOGGER_NAME));
+            return new Log4jLoggerAdapter(LogManager.getLogger(LOGGER_NAME));
         } catch (Throwable ignored) {
             // Log4j2 not available (Forge 1.6.4), fall back
             return new StdoutLoggerAdapter(LOGGER_NAME);
@@ -62,6 +63,12 @@ public class LaunchWrapperEntrypoint implements ITweaker, Platform {
 
     @Override
     public String getLaunchTarget() {
+        // Smoketest escape: when relauncher.test.markerDir is set, the smoketest
+        // has preloaded the harness on the classpath, hand off to StubLaunchTarget
+        // so LaunchWrapper finishes cleanly and the bootstrap marker gets written.
+        if (System.getProperty("relauncher.test.markerDir") != null) {
+            return "com.juanmuscaria.relauncher.smoketest.harness.StubLaunchTarget";
+        }
         return null;
     }
 

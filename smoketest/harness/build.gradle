@@ -1,0 +1,28 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins {
+    id 'relauncher.smoketest-base'
+    id 'relauncher.testing-junit5'
+}
+
+description = 'Shared smoketest harness: marker I/O, TestPlatform, loader stubs'
+
+dependencies {
+    api project(':relauncher-core')
+    // Loader APIs are compile-only here, the stubs implement them, but the
+    // harness itself does not depend on them at runtime.
+    //noinspection VulnerableLibrariesLocal
+    compileOnly 'net.minecraft:launchwrapper:1.12'
+    compileOnly 'cpw.mods:modlauncher:2.1.5'
+    compileOnly 'net.fabricmc:fabric-loader:0.15.7'
+    compileOnly('net.neoforged.fancymodloader:loader:10.0.36') { transitive = false }
+    // Dist enum lives in mergetool-api, which loader depends on transitively
+    // but we pulled loader with transitive = false.
+    compileOnly('net.neoforged:mergetool:2.0.3:api') { transitive = false }
+}
+
+test {
+    forkEvery 1   // fresh JVM per test class, Platform is a singleton
+}

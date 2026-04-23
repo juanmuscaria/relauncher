@@ -1,0 +1,19 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'neoforged'
+        url = 'https://maven.neoforged.net/releases'
+    }
+    maven {
+        name = 'fabric'
+        url = 'https://maven.fabricmc.net/'
+    }
+    maven {
+        name = 'minecraft'
+        url = 'https://libraries.minecraft.net'
+    }
+}

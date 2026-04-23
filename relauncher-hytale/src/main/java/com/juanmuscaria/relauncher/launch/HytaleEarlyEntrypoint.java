@@ -6,13 +6,11 @@ package com.juanmuscaria.relauncher.launch;
 
 import com.hypixel.hytale.plugin.early.ClassTransformer;
 import com.juanmuscaria.relauncher.RelauncherConfig;
-import com.juanmuscaria.relauncher.logger.JavaLoggerAdapter;
 import com.juanmuscaria.relauncher.logger.LoggerAdapter;
 import com.juanmuscaria.relauncher.logger.StdoutLoggerAdapter;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.logging.Logger;
 
 /**
  * Hooks into Hytale's early plugin system via the {@link ClassTransformer} SPI.

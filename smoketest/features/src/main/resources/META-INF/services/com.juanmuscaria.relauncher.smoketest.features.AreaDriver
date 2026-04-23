@@ -1,0 +1,9 @@
+com.juanmuscaria.relauncher.smoketest.features.areas.SpiDiscoveryArea
+com.juanmuscaria.relauncher.smoketest.features.areas.ProgrammaticApiArea
+com.juanmuscaria.relauncher.smoketest.features.areas.DepthAndLoopArea
+com.juanmuscaria.relauncher.smoketest.features.areas.ConfigArea
+com.juanmuscaria.relauncher.smoketest.features.areas.DuplicatePropertyArea
+com.juanmuscaria.relauncher.smoketest.features.areas.JvmMatchingArea
+com.juanmuscaria.relauncher.smoketest.features.areas.FoojayDownloadArea
+com.juanmuscaria.relauncher.smoketest.features.areas.DebugLoggingArea
+com.juanmuscaria.relauncher.smoketest.features.areas.StrategiesArea

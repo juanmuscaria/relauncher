@@ -1,0 +1,34 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+// Java 17 syntax → Java 8 bytecode via Jabel, for modules that must run on
+// Minecraft 1.6.4-1.12.2
+
+plugins {
+    id 'relauncher.repositories'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+// spotbugs-annotations 4.9+ requires Java 11, exclude globally
+configurations.configureEach {
+    exclude group: 'com.github.spotbugs', module: 'spotbugs-annotations'
+}
+
+dependencies {
+    annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.4.2'
+}
+
+tasks.named('compileJava').configure {
+    sourceCompatibility = 17 // IDE support
+    options.release = 8
+
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}

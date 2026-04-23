@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+#
+# SPDX-License-Identifier: MPL-2.0
+
+[versions]
+shadow = "9.4.1"
+nexus-publish = "2.0.0"
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }

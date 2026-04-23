@@ -8,23 +8,15 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /**
- * Implement this to inject extra JVM arguments during a relaunch.
- * <p>
- * Implementations are discovered via {@link ServiceLoader}. Just drop a
- * standard service file in your JAR and Relauncher will pick it up from
- * the mods folder, even before the mod loader adds your JAR to the classpath.
+ * Implement to inject extra JVM args during a relaunch. Discovered via {@link ServiceLoader},
+ * scanned from the mods folder even before the loader sets up the classpath.
  */
 public interface CommandLineProvider {
 
-    /**
-     * The extra JVM arguments to add. These go before the original arguments,
-     * ordered by {@link #priority()} across all providers.
-     */
+    /** Extra JVM args, prepended to the original args, ordered by {@link #priority()}. */
     List<String> extraJvmArguments();
 
-    /**
-     * Controls ordering when multiple providers are present. Lower values run first.
-     */
+    /** Lower runs first */
     default int priority() {
         return 0;
     }

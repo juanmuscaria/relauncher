@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+#
+# SPDX-License-Identifier: MPL-2.0
+
+name: Natives
+
+on:
+  workflow_call:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  natives-linux:
+    name: Native - Linux (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            target: x86_64-unknown-linux-gnu
+          - arch: aarch64
+            target: aarch64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - run: cargo install cross --locked
+      - run: cross build --target ${{ matrix.target }} --release
+        working-directory: native
+      - uses: actions/upload-artifact@v6
+        with:
+          name: native-linux-${{ matrix.arch }}
+          path: native/target/${{ matrix.target }}/release/librelauncher_native.so
+
+  natives-macos:
+    name: Native - macOS (${{ matrix.arch }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            target: x86_64-apple-darwin
+          - arch: aarch64
+            target: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }} --release
+        working-directory: native
+      - uses: actions/upload-artifact@v6
+        with:
+          name: native-macos-${{ matrix.arch }}
+          path: native/target/${{ matrix.target }}/release/librelauncher_native.dylib
+
+  natives-windows:
+    name: Native - Windows (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            target: x86_64-pc-windows-msvc
+          - arch: aarch64
+            target: aarch64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - run: cargo install cargo-xwin --locked
+      - run: cargo xwin build --target ${{ matrix.target }} --release
+        working-directory: native
+      - uses: actions/upload-artifact@v6
+        with:
+          name: native-windows-${{ matrix.arch }}
+          path: native/target/${{ matrix.target }}/release/relauncher_native.dll

@@ -1,0 +1,37 @@
+// SPDX-FileCopyrightText: 2026 juanmuscaria <juan@juanmuscaria.com>
+//
+// SPDX-License-Identifier: MPL-2.0
+
+plugins { id 'relauncher.smoketest-entrypoint' }
+
+description = 'Entrypoint-discovery smoketest: 26.x Fabric'
+
+// Fabric Loader 0.16.14 is the last release whose GameProvider interface matches
+// the API the harness SmoketestGameProvider was compiled against (0.15.7).
+// Starting with 0.17.0 the interface gained an abstract getBuiltinTransforms()
+// and dropped isObfuscated(), making the compiled SmoketestGameProvider
+// incompatible at runtime (AbstractMethodError). Use 0.16.14 here until the
+// harness is updated to target the 0.17+ API.
+relauncherSmoketest {
+    loader = 'fabric'
+    mcVersion = '26.x'
+    loaderVersion = '0.16.14'
+    entrypointModule = ':relauncher-fabric'
+}
+
+dependencies {
+    smoketestRuntimeClasspath 'net.fabricmc:fabric-loader:0.16.14'
+    // fabric-loader's built-in MinecraftGameProvider references ASM in its constructor;
+    // add it so instantiation succeeds before fabric.skipMcProvider disables it.
+    smoketestRuntimeClasspath 'org.ow2.asm:asm:9.3'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm-tree:9.3'
+    smoketestRuntimeClasspath 'org.ow2.asm:asm-commons:9.3'
+    // Mixin is not shaded in fabric-loader; it expects the game environment to provide it.
+    smoketestRuntimeClasspath 'net.fabricmc:sponge-mixin:0.16.0+mixin.0.8.7'
+}
+
+// Tell fabric-loader to skip MinecraftGameProvider so our SmoketestGameProvider
+// (registered via ServiceLoader) is picked up instead.
+tasks.named('smoketestEntrypoint', JavaExec) {
+    jvmArgs '-Dfabric.skipMcProvider=true'
+}
