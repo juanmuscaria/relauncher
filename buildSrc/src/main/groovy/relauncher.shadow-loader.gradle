@@ -31,10 +31,10 @@ tasks.register('curseforgeJar', com.github.jengelman.gradle.plugins.shadow.tasks
     exclude 'relauncher-natives/**'
     exclude 'com/juanmuscaria/relauncher/foojay/**'
     exclude 'META-INF/services/com.juanmuscaria.relauncher.jvm.JavaRuntimeDownloader'
-    exclude 'com/google/gson/**'
-    exclude 'META-INF/maven/com.google.code.gson/**'
-    exclude 'com/google/errorprone/**'
-    exclude 'META-INF/maven/com.google.errorprone/**'
+    dependencies {
+        exclude(dependency("com.google.code.gson:.*:.*"))
+        exclude(dependency("com.google.errorprone:.*:.*"))
+    }
 }
 
 tasks.named('build').configure {
